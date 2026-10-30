@@ -34,8 +34,9 @@ Invoke-Native "$bt\aapt2.exe" compile --dir "$src\res" -o "$b\res.zip"
 Invoke-Native "$bt\aapt2.exe" link -o "$b\base.apk" -I $androidJar --manifest "$src\AndroidManifest.xml" --java "$b\gen" `
     --min-sdk-version 24 --target-sdk-version 28 "$b\res.zip"
 $sources = @(Get-ChildItem -LiteralPath "$src\src", "$b\gen" -Recurse -Filter *.java | ForEach-Object { $_.FullName })
+# Java 8 с android.jar вместо библиотек JDK: так и вызов java.* новее этого ТВ сломает сборку, а не запуск.
 # Кавычки у -Xlint обязательны: без них PowerShell разрежет аргумент по двоеточию.
-Invoke-Native "$jdk\bin\javac.exe" -nowarn '-Xlint:-options' --release 11 -encoding UTF-8 -classpath $androidJar -d "$b\classes" @sources
+Invoke-Native "$jdk\bin\javac.exe" -nowarn '-Xlint:-options' -source 8 -target 8 -encoding UTF-8 -bootclasspath "$androidJar;$bt\core-lambda-stubs.jar" -d "$b\classes" @sources
 Invoke-Native "$jdk\bin\jar.exe" cf "$b\classes.jar" -C "$b\classes" .
 Invoke-Native "$bt\d8.bat" --min-api 24 --lib $androidJar --output "$b\dex" "$b\classes.jar"
 
@@ -49,6 +50,15 @@ try {
     foreach ($photo in Get-ChildItem -LiteralPath "$src\assets\wallpapers" -File) {
         [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $photo.FullName,
             "assets/wallpapers/$($photo.Name)", [IO.Compression.CompressionLevel]::NoCompression)
+    }
+    # Список для настройки прямо на ТВ. И авторы фотографий с лицензией: APK распространяется отдельно от проекта.
+    $bundled = @{
+        'assets/debloat.txt' = (Join-Path $Repo 'examples\sony-bravia-kd55xf9005\debloat.txt')
+        'assets/WALLPAPER-CREDITS.md' = "$src\WALLPAPER-CREDITS.md"
+        'assets/LICENSE' = (Join-Path $Repo 'LICENSE')
+    }
+    foreach ($entry in $bundled.GetEnumerator()) {
+        [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $entry.Value, $entry.Key)
     }
 } finally { $zip.Dispose() }
 Invoke-Native "$bt\zipalign.exe" -f 4 "$b\unsigned.apk" "$b\aligned.apk"
@@ -109,14 +119,20 @@ if ($StockLauncher -ne 'none') { $handover += "pm disable-user --user 0 $StockLa
 $handover += "cmd package set-home-activity --user 0 $LauncherHome"
 $handover += 'am force-stop com.android.tv.settings'
 $handover += 'input keyevent KEYCODE_HOME'
-Invoke-Tv $handover | ForEach-Object { Write-Host $_ }
+# Обрыв связи не должен оставить ТВ без домашнего экрана: что бы ни случилось, дальше проверяем, кому достался Home.
+try { Invoke-Tv $handover | ForEach-Object { Write-Host $_ } }
+catch { Write-Warning "Связь оборвалась во время передачи Home: $_" }
 
-$now = Get-TvHome
+$now = try { Get-TvHome } catch { '' }
 if ($now -ne $LauncherHome) {
     if ($StockLauncher -ne 'none') {
         Write-Warning "Home достался '$now', а не новому лаунчеру. Возвращаю стандартный."
-        Invoke-Tv @("pm enable $StockLauncher", "cmd package set-home-activity --user 0 $homeNow", 'input keyevent KEYCODE_HOME') |
-            ForEach-Object { Write-Host $_ }
+        try {
+            Invoke-Tv @("pm enable $StockLauncher", "cmd package set-home-activity --user 0 $homeNow", 'input keyevent KEYCODE_HOME') |
+                ForEach-Object { Write-Host $_ }
+        } catch {
+            throw "Стандартный лаунчер вернуть не удалось: нет связи с ТВ. Когда связь появится, выполните: tools\restore.ps1 examples\sony-bravia-kd55xf9005\debloat.txt"
+        }
     }
     throw "Лаунчер не стал домашним экраном (Home: $now). См. раздел о проблемах в ИНСТРУКЦИЯ.md."
 }

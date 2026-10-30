@@ -12,4 +12,25 @@
     <string name="all_sources">All sources…</string>
     <string name="offline">Offline</string>
     <string name="ethernet">Ethernet</string>
+
+    <string name="setup_title">Home screen setup</string>
+    <string name="setup_intro">Runs on the TV itself, no computer needed.\n\nFirst turn on debugging: Settings → Device Preferences → About → press Build 7 times, then Developer options → USB debugging.\n\nCleaning turns off ads, telemetry and demo mode. Chromecast, voice search, mirroring and installed apps stay. Nothing is deleted, and \"Put everything back\" undoes it all.</string>
+    <string name="setup_install_clean">Clean up and install the home screen</string>
+    <string name="setup_install_only">Install the home screen only</string>
+    <string name="setup_restore">Put everything back</string>
+    <string name="setup_open_home">Open the new home screen</string>
+    <string name="setup_connecting">Connecting to the TV\'s debugging. If it asks \"Allow USB debugging?\", tick \"Always allow\" and press OK.</string>
+    <string name="setup_adb_off">USB debugging is off (port 5555 is closed). Turn it on with the steps on the left and press the button again.</string>
+    <string name="setup_adb_not_approved">Debugging wasn\'t allowed. Press the button again and answer OK on the prompt.</string>
+    <string name="setup_error">Something went wrong: %1$s</string>
+    <string name="setup_wrong_brand">This TV reports \"%1$s\", not Sony. This setup is for Sony only, so nothing was changed.</string>
+    <string name="setup_other_platform">This TV\'s platform is %1$s, and the list was written for %2$s. Packages it doesn\'t have are skipped.</string>
+    <string name="setup_unknown_home">The Home button belongs to %1$s, which isn\'t a stock launcher this setup knows. Nothing was changed.</string>
+    <string name="setup_disabled_summary">Disabled: %1$d. Not on this TV: %2$d. Failed: %3$d.</string>
+    <string name="setup_trying">Trying the new home screen for 3 seconds…</string>
+    <string name="setup_trial_crashed">The new home screen crashed when tried. The Home button wasn\'t touched and still opens the stock screen.</string>
+    <string name="setup_home_failed">The new screen didn\'t take over Home (it went to %1$s), so the stock one is back.</string>
+    <string name="setup_done">Done. Press \"Open the new home screen\". Once everything works, turn USB debugging off: Settings → Device Preferences → Developer options. It\'s unencrypted, and nothing here needs it any more.</string>
+    <string name="setup_restored">Done, everything is back. Press \"Open the new home screen\" to go to the stock screen. To remove this app: Settings → Apps.</string>
+    <string name="setup_restore_failed">The Home button still goes to %1$s. Restart the TV and try again.</string>
 </resources>

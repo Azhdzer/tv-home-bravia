@@ -39,7 +39,7 @@ Assert-SonyTv
 Invoke-Tv $commands | ForEach-Object { Write-Host $_ }
 
 $now = Get-TvHome
-if ($now -eq $stockHome) {
+if ($now -like "$stockPackage/*") {
     Write-Host "Готово. Кнопка Home снова открывает $now."
 } else {
     Write-Warning "Home сейчас принадлежит '$now', а ожидался $stockHome. Нажмите Home на пульте; если откроется не тот экран, см. раздел о проблемах в ИНСТРУКЦИЯ.md."

@@ -4,13 +4,14 @@
   Имена пакетов установленных приложений: tools\venv\Scripts\python.exe -I tools\tv.py "pm list packages -3"
 -->
 <resources>
-    <!-- Приложения в доке, слева направо. Те, что не установлены, просто пропускаются. -->
+    <!-- Приложения в доке, слева направо. Те, что не установлены, пропускаются, а появятся сами, когда
+         вы поставите их из Play Маркета (например, Twitch). Все остальные приложения будут в сетке. -->
     <string-array name="dock_apps">
         <item>com.google.android.youtube.tv</item>
+        <item>tv.twitch.android.app</item>
         <item>com.netflix.ninja</item>
         <item>com.amazon.amazonvideo.livingroom</item>
         <item>com.apple.atve.androidtv.appletv</item>
-        <item>org.videolan.vlc</item>
     </string-array>
 
     <!-- Никогда не показывать плитками: приложение ТВ и его телегид (ТВ есть в меню «Входы»). -->

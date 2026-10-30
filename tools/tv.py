@@ -11,11 +11,14 @@
 import base64
 import hashlib
 import os
+import socket
 import sys
+import time
 
 from adb_shell.adb_device import AdbDeviceTcp
 from adb_shell.auth.keygen import keygen
 from adb_shell.auth.sign_pythonrsa import PythonRSASigner
+from adb_shell.exceptions import AdbTimeoutError, DeviceAuthError
 
 # A Russian Windows console can't encode everything a TV prints; don't crash on it.
 sys.stdout.reconfigure(errors="replace")
@@ -37,17 +40,28 @@ def signer():
     return PythonRSASigner(open(KEY + ".pub").read(), open(KEY).read())
 
 
+def no_connection(error):
+    return (f"Нет связи с ТВ {HOST}:{PORT} ({error}). ТВ включён и в той же сети? В настройках для разработчиков "
+            "включена отладка по USB? Если IP поменялся, запустите tools\\find-tv.ps1.")
+
+
 def connect():
-    dev = AdbDeviceTcp(HOST, PORT, default_transport_timeout_s=120.0)
-    try:
-        dev.connect(rsa_keys=[signer()], auth_timeout_s=120)
-    except OSError as e:
-        sys.exit(f"Нет связи с ТВ {HOST}:{PORT} ({e}). ТВ включён и в той же сети? В настройках для разработчиков "
-                 "включена отладка по USB? Если IP поменялся, запустите tools\\find-tv.ps1.")
-    except Exception as e:
-        sys.exit(f"ТВ {HOST}:{PORT} не разрешил подключение ({type(e).__name__}: {e}). "
-                 "Подтвердите на экране ТВ «Разрешить отладку» и повторите.")
-    return dev
+    # A TV on Wi-Fi can drop the odd connection; that shouldn't stop a script halfway through.
+    error = None
+    for _ in range(3):
+        dev = AdbDeviceTcp(HOST, PORT, default_transport_timeout_s=120.0)
+        try:
+            dev.connect(rsa_keys=[signer()], auth_timeout_s=120)
+            return dev
+        except (DeviceAuthError, AdbTimeoutError) as e:
+            sys.exit(f"ТВ {HOST}:{PORT} не разрешил подключение ({e}). "
+                     "Подтвердите на экране ТВ «Разрешить отладку» и повторите.")
+        except socket.timeout as e:
+            sys.exit(no_connection(e))
+        except Exception as e:
+            error = e
+            time.sleep(1)
+    sys.exit(no_connection(error))
 
 
 def push_b64(dev, local, remote, chunk=48_000):

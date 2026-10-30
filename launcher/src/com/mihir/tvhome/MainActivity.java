@@ -118,7 +118,6 @@ public class MainActivity extends Activity {
         super.onCreate(b);
         dockApps = getResources().getStringArray(R.array.dock_apps);
         hidden.addAll(Arrays.asList(getResources().getStringArray(R.array.hidden_apps)));
-        hidden.add(getPackageName());
         liveTvPkg = getString(R.string.live_tv_package);
         inputPickerPkg = getString(R.string.input_picker_package);
         cols = getResources().getInteger(R.integer.columns);
@@ -371,16 +370,32 @@ public class MainActivity extends Activity {
         for (String p : dockApps) if (byPkg.containsKey(p)) dock.add(byPkg.remove(p));
         List<App> rest = new ArrayList<>(byPkg.values());
         Collections.sort(rest, (x, y) -> x.label.compareToIgnoreCase(y.label));
+        // None of the configured apps are on this TV, and setup without a computer can't edit the list.
+        // Setup stays in the grid: it's not something to land on.
+        if (dock.isEmpty()) {
+            for (java.util.Iterator<App> it = rest.iterator(); it.hasNext() && dock.size() < cols; ) {
+                App a = it.next();
+                if (a.pkg.equals(getPackageName())) continue;
+                dock.add(a);
+                it.remove();
+            }
+        }
 
+        // Removing the focused tile sends focus to the first pill, whose listener would record that as where the user was.
+        int focused = lastFocusedId;
         dockRow.removeAllViews();
         grid.removeAllViews();
+        lastFocusedId = focused;
         dockCards.clear();
         gridCards.clear();
 
-        for (int i = 0; i < dock.size(); i++) {
-            View tile = tile(dock.get(i), true);
-            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, -2, 1f);
-            p.setMargins(i == 0 ? 0 : dp(10), 0, i == dock.size() - 1 ? 0 : dp(10), 0);
+        // Tiles keep their size however few apps are installed; empty slots just stay empty.
+        int slots = Math.max(cols, dock.size());
+        for (int i = 0; i < slots; i++) {
+            boolean empty = i >= dock.size();
+            View tile = empty ? new View(this) : tile(dock.get(i), true);
+            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, empty ? 1 : -2, 1f);
+            p.setMargins(i == 0 ? 0 : dp(10), 0, i == slots - 1 ? 0 : dp(10), 0);
             dockRow.addView(tile, p);
         }
 
