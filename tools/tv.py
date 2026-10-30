@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Tiny ADB-over-Wi-Fi client (no adb binary needed; avoids macOS Local Network blocking).
+"""Tiny ADB-over-Wi-Fi client (no adb binary or Android platform-tools needed).
 
     tv.py --probe                            (TV_HOST env or tools/.tv_host)
-    tv.py 'pm list packages'                 one shell command
+    tv.py "pm list packages"                 one shell command
     tv.py --batch < cmds.txt                 one command per line, same connection
     tv.py --pull /sdcard/x.png x.png
     tv.py --push-b64 local.apk /data/local/tmp/x.apk   chunked base64 upload with md5 check
@@ -17,11 +17,15 @@ from adb_shell.adb_device import AdbDeviceTcp
 from adb_shell.auth.keygen import keygen
 from adb_shell.auth.sign_pythonrsa import PythonRSASigner
 
+# A Russian Windows console can't encode everything a TV prints; don't crash on it.
+sys.stdout.reconfigure(errors="replace")
+sys.stderr.reconfigure(errors="replace")
+
 HERE = os.path.dirname(os.path.abspath(__file__))
-HOST_FILE = os.path.join(HERE, ".tv_host")  # written by find-tv.sh, git-ignored
-HOST = os.environ.get("TV_HOST") or (open(HOST_FILE).read().strip() if os.path.exists(HOST_FILE) else "")
+HOST_FILE = os.path.join(HERE, ".tv_host")  # written by find-tv.ps1, git-ignored
+HOST = os.environ.get("TV_HOST") or (open(HOST_FILE, encoding="utf-8-sig").read().strip() if os.path.exists(HOST_FILE) else "")
 if not HOST:
-    sys.exit("Don't know your TV's IP. Run tools/find-tv.sh, or set TV_HOST=192.168.x.y")
+    sys.exit("IP телевизора неизвестен. Запустите tools\\find-tv.ps1 или задайте: tools\\find-tv.ps1 -Ip 192.168.x.y")
 PORT = int(os.environ.get("TV_PORT", "5555"))
 KEY = os.path.join(HERE, "adbkey", "adbkey")
 
@@ -35,7 +39,14 @@ def signer():
 
 def connect():
     dev = AdbDeviceTcp(HOST, PORT, default_transport_timeout_s=120.0)
-    dev.connect(rsa_keys=[signer()], auth_timeout_s=120)
+    try:
+        dev.connect(rsa_keys=[signer()], auth_timeout_s=120)
+    except OSError as e:
+        sys.exit(f"Нет связи с ТВ {HOST}:{PORT} ({e}). ТВ включён и в той же сети? В настройках для разработчиков "
+                 "включена отладка по USB? Если IP поменялся, запустите tools\\find-tv.ps1.")
+    except Exception as e:
+        sys.exit(f"ТВ {HOST}:{PORT} не разрешил подключение ({type(e).__name__}: {e}). "
+                 "Подтвердите на экране ТВ «Разрешить отладку» и повторите.")
     return dev
 
 
@@ -43,6 +54,8 @@ def push_b64(dev, local, remote, chunk=48_000):
     data = open(local, "rb").read()
     enc = base64.b64encode(data).decode()
     tmp = remote + ".b64"
+    # The whole shell command has to fit in one ADB packet, and that limit varies per TV.
+    chunk = min(chunk, dev.max_chunk_size - 128)
     dev.shell(f"rm -f {tmp} {remote}")
     for i in range(0, len(enc), chunk):
         dev.shell(f"echo -n '{enc[i:i + chunk]}' >> {tmp}")
@@ -62,7 +75,8 @@ def main():
                   "ro.build.version.release", "ro.build.version.sdk", "ro.build.display.id"):
             print(f"{p} = {dev.shell(f'getprop {p}').strip()}")
     elif a[0] == "--batch":
-        for line in sys.stdin:
+        # utf-8-sig: PowerShell can prepend a BOM when piping, which would corrupt the first command.
+        for line in sys.stdin.buffer.read().decode("utf-8-sig", errors="replace").splitlines():
             line = line.strip()
             if line and not line.startswith("#"):
                 print(f"$ {line}\n{dev.shell(line, read_timeout_s=120).rstrip()}")

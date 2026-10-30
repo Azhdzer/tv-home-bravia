@@ -1,0 +1,113 @@
+# Sony BRAVIA KD-55XF9005 (2018, платформа BRAVIA_ATV3_4K, MediaTek MT5891, 2 ГБ ОЗУ, Android TV 9)
+#
+# Проверить:  tools\disable.ps1 examples\sony-bravia-kd55xf9005\debloat.txt -DryRun
+# Применить:  tools\disable.ps1 examples\sony-bravia-kd55xf9005\debloat.txt
+# Откатить:   tools\restore.ps1 examples\sony-bravia-kd55xf9005\debloat.txt
+#
+# Всё отключается для пользователя 0 и НЕ удаляется. Формат: один пакет на строку, после # комментарий.
+# Чтобы оставить приложение, поставьте # в начале его строки. Пакеты, которых нет на вашем ТВ, просто пропускаются.
+#
+# ОТКУДА СПИСОК. На самом KD-55XF9005 он пока не проверялся. Он составлен по спискам владельцев телевизоров
+# на той же платформе и прошивке (PTT1.190515.001.S54): XBR-65X900F (американская версия этой же серии)
+# и KD-55XF8096 (европейская); оба проверены перезагрузкой. Сравните свою платформу: tools\tv.py --probe.
+#
+# СПОРНЫЕ ПАКЕТЫ НАРОЧНО НЕ ВКЛЮЧЕНЫ:
+#   com.sony.dtv.b2b.hotelmode    на XBR-55X850D его отключение ломало открытие Настроек
+#   com.sony.dtv.scrums.action    это меню Action Menu на пульте
+#   com.sony.dtv.bivlinfo         кормит Discover, но участвует и в поиске обновлений прошивки (см. ниже)
+#   com.google.android.tungsten.setupwraith   на этой платформе не перехватывает Home, а на BRAVIA 9 II
+#                                 его отключение стирало сохранённый Wi-Fi
+
+# Слежка за тем, что на экране (ACR)
+tv.samba.ssm                             # Samba TV: снимает «отпечатки» изображения
+
+# Реклама и промо
+com.sony.dtv.promos                      # промо My BRAVIA
+com.sony.dtv.sonyselect                  # витрина Sony Select
+com.sony.dtv.sonyselect.overlay
+com.sony.dtv.discovery                   # панель Sony Discover (процесс может остаться запущенным, он persistent)
+com.sony.dtv.tvlaunchercustomizer        # реклама и правки Sony на стандартном домашнем экране
+com.google.android.tvrecommendations     # ряды рекомендаций стандартного домашнего экрана
+android.autoinstalls.config.sony.bravia  # сам ставит партнёрские приложения из Play Store
+
+# Настройка Alexa: запускается при каждом включении
+com.sony.dtv.smarthomesettings
+
+# Демо-режим для магазинов
+com.sony.dtv.demomode
+com.sony.dtv.demosupport
+com.sony.dtv.multiscreendemo
+
+# Телеметрия, удалённая поддержка, отчёты
+com.sony.dtv.da.service                  # агент устройства Sony / удалённая поддержка
+com.qterics.da.product                   # агент Qterics
+com.sonyericsson.idd.agent               # сбор данных об использовании
+com.sony.dtv.sonybugreportsys
+com.sony.dtv.sonyloglevelsettingsys
+com.sony.dtv.sonyloglevelsettingvnd
+com.google.android.tv.bugreportsender
+com.google.android.feedback
+
+# Профессиональные функции, дома не нужны
+com.sony.dtv.b2b.vendorprotocol          # рассылает модель/MAC/IP для Control4; верните, если есть такая система
+com.sony.dtv.b2b.rs232csupport           # управление по RS-232C
+
+# Справка
+com.sony.dtv.customersupport
+com.sony.dtv.smarthelp
+com.sony.dtv.imanual                     # i-Manual
+
+# Лишнее от Google
+com.google.android.videos                # Play Фильмы: сервис закрыт. Плюс кнопка Google Play на пульте начнёт открывать Play Store
+com.google.android.play.games
+com.android.printspooler                 # печать
+
+# ------------------------------------------------------------------------------------------------
+# ВАШ ВЫБОР. Это функции, а не мусор, поэтому они ОСТАВЛЕНЫ ВКЛЮЧЁННЫМИ.
+# Если функцией не пользуетесь, уберите # в начале строки: это освободит ещё немного памяти.
+# ------------------------------------------------------------------------------------------------
+
+# Голосовой поиск и Google Ассистент (кнопка микрофона)
+# com.google.android.katniss
+
+# Chromecast (трансляция с телефона)
+# com.google.android.apps.mediashell
+
+# Зеркалирование экрана телефона (Miracast)
+# screnmirroring.com
+# com.sony.dtv.networkapp.wifidirect
+
+# Приложение-пульт Android TV на телефоне. Осторожно: через него идёт и микрофон Bluetooth-пульта
+# com.google.android.tv.remote.service
+
+# DLNA: воспроизведение с телефона или компьютера по сети
+# com.sony.huey.dlna.module
+# com.sony.huey.dlna.renderersettings
+# com.sonyericsson.dlna
+
+# Плееры для файлов с USB-накопителя
+# com.sony.dtv.smartmediaapp
+# com.sony.dtv.osat.music
+
+# HbbTV («красная кнопка» в цифровом эфире)
+# com.vewd.core.integration.dia
+
+# Управление другой техникой через ИК-передатчик (Harmony и т. п.)
+# com.uei.quicksetsdk.sony
+
+# Заставка с фото
+# com.google.android.backdrop
+
+# Экранный диктор (специальные возможности)
+# com.google.android.marvin.talkback
+
+# Предустановленные сервисы. Отключайте только те, которыми точно не пользуетесь
+# com.netflix.ninja
+# com.amazon.amazonvideo.livingroom
+# com.disney.disneyplus
+# com.google.android.youtube.tvmusic
+# com.sony.dtv.youview                   # YouView, только Великобритания
+
+# Источник данных для Discover. У других владельцев отключался без проблем, но он регистрирует события
+# поиска и загрузки обновлений ПО. Поэтому по умолчанию оставлен: вреда от него мало
+# com.sony.dtv.bivlinfo

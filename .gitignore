@@ -6,6 +6,9 @@ launcher/debug.keystore
 backup/
 shots/
 
+# JDK and Android SDK downloaded by setup.ps1
+.toolchain/
+
 # Build output
 launcher/build/
 .DS_Store

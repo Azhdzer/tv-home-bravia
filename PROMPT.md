@@ -1,21 +1,27 @@
-# The prompt
+# Запрос для Claude Code
 
-**First, on the TV:** Settings → System → About → press OK on **Build** 7 times → back → Developer
-options → turn on **USB debugging**. Keep the TV on, on the same Wi-Fi as your computer.
+**Сначала на ТВ:** Настройки → Настройки устройства → Об устройстве → 7 раз нажмите ОК на **Сборка** → назад →
+Для разработчиков → включите **Отладку по USB**. ТВ должен быть включён и в одной сети с компьютером.
 
-Then paste this into Claude Code (works on Android TV / Google TV, not Samsung, LG or Fire TV):
+Затем откройте Claude Code в папке этого проекта, чтобы он использовал готовый лаунчер и скрипты, и вставьте:
 
 ```text
-My Android TV is slow and full of ads. Find it on my Wi-Fi, connect over ADB, and debloat it:
-disable the manufacturer's ads, telemetry and junk (reversibly, never uninstall), asking me first
-about apps and features I might use. Then build and install a fast, minimal Apple TV-style home
-screen with a dock of my favourite apps and rotating nature wallpapers. Back up before changing
-anything, check every step with screenshots from the TV, and give me a restore script.
+Мой Sony BRAVIA KD-55XF9005 медленный и полон рекламы. Найди его в сети, подключись по ADB и очисти его
+по ИНСТРУКЦИЯ.md: отключи рекламу, телеметрию и мусор (обратимо, ничего не удаляй), а о функциях, которыми
+я могу пользоваться, сначала спроси меня. Потом собери и поставь домашний экран из launcher/, спросив, какие
+приложения поставить в док. Перед изменениями сделай резервную копию, проверяй каждый шаг скриншотами с ТВ,
+в конце проверь откат командами в режиме -DryRun.
 
-Heads-up from people who've done this: use the adb-shell Python package if macOS blocks adb; on
-Google TV also disable com.google.android.tungsten.setupwraith or it hijacks the Home button; and
-test the Home button from inside an app.
+Что уже известно об этой платформе (BRAVIA_ATV3_4K, Android 9):
+- у com.google.android.tvlauncher приоритет HOME = 2: set-home-activity отвечает Success, но не действует,
+  пока он не отключён. build-and-install.ps1 учитывает это;
+- com.google.android.tungsten.setupwraith здесь Home не перехватывает. Не отключай его без необходимости:
+  на других BRAVIA это стирало сохранённый Wi-Fi;
+- не отключай com.sony.dtv.tvx, com.sony.dtv.tvinput.*, braviasync*, com.sony.dtv.b2b.hotelmode,
+  com.sony.dtv.scrums.action, com.mediatek.*;
+- скриншоты настроек Sony бывают пустыми, а HDMI и эфира чёрными. Читай такие экраны через uiautomator dump;
+- проверь Home изнутри приложения, переключение HDMI и работу после перезагрузки.
 ```
 
-If you cloned [this repo](https://github.com/mihirgupta0900/tv-home), run Claude Code inside it. It
-can reuse the launcher and scripts instead of writing them from scratch.
+Claude задаст несколько вопросов: какими приложениями и функциями вы пользуетесь и что поставить в док.
+Подтвердите на ТВ запрос «Разрешить отладку», когда он появится.

@@ -1,34 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Launcher settings. Edit, then run launcher/build-and-install.sh.
-  Package names: tools/venv/bin/python -I tools/tv.py 'pm list packages'
+  Настройки лаунчера. После правки запустите launcher\build-and-install.ps1.
+  Имена пакетов установленных приложений: tools\venv\Scripts\python.exe -I tools\tv.py "pm list packages -3"
 -->
 <resources>
-    <!-- Dock apps, left to right. Apps that aren't installed are skipped. -->
+    <!-- Приложения в доке, слева направо. Те, что не установлены, просто пропускаются. -->
     <string-array name="dock_apps">
-        <item>com.apple.atve.androidtv.appletv</item>
         <item>com.google.android.youtube.tv</item>
-        <item>in.startv.hotstar</item>
         <item>com.netflix.ninja</item>
         <item>com.amazon.amazonvideo.livingroom</item>
+        <item>com.apple.atve.androidtv.appletv</item>
+        <item>org.videolan.vlc</item>
     </string-array>
 
-    <!-- Never shown as tiles: system helpers, and the Live TV app (it's in the Inputs menu). -->
+    <!-- Никогда не показывать плитками: приложение ТВ и его телегид (ТВ есть в меню «Входы»). -->
     <string-array name="hidden_apps">
-        <item>com.tcl.tv</item>
-        <item>com.tcl.suspension</item>
-        <item>com.tcl.t_solo</item>
-        <item>com.tcl.dashboard</item>
+        <item>com.sony.dtv.tvx</item>
+        <item>com.sony.dtv.tvxlauncher.programguide</item>
     </string-array>
 
-    <!-- The TV's Live TV / tuner app, listed last in the Inputs menu. Empty to leave it out.
-         Common ones: com.tcl.tv (TCL), com.mediatek.wwtv.tvcenter (Xiaomi, many MediaTek sets),
-         com.google.android.tv (Google Live Channels), com.sony.dtv.tvx (Sony). -->
-    <string name="live_tv_package" translatable="false">com.tcl.tv</string>
+    <!-- Приложение ТВ у Sony: оно же показывает все входы HDMI. Стоит последним в меню «Входы». -->
+    <string name="live_tv_package" translatable="false">com.sony.dtv.tvx</string>
 
-    <!-- The manufacturer's own source picker, used if switching to an input directly fails. -->
-    <string name="input_picker_package" translatable="false">com.tcl.suspension</string>
+    <!-- Запасной способ, если напрямую переключиться на вход не удалось. -->
+    <string name="input_picker_package" translatable="false">com.sony.dtv.tvx</string>
 
-    <!-- Tiles per row in the grid. -->
+    <!-- Плиток в ряду в сетке «Все приложения». -->
     <integer name="columns">5</integer>
 </resources>

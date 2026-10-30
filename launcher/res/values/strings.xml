@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="greeting_night">GOOD NIGHT</string>
+    <string name="greeting_morning">GOOD MORNING</string>
+    <string name="greeting_afternoon">GOOD AFTERNOON</string>
+    <string name="greeting_evening">GOOD EVENING</string>
+    <string name="inputs">Inputs</string>
+    <string name="wifi">Wi-Fi</string>
+    <string name="settings">Settings</string>
+    <string name="all_apps">ALL APPS</string>
+    <string name="live_tv">Live TV</string>
+    <string name="all_sources">All sources…</string>
+    <string name="offline">Offline</string>
+    <string name="ethernet">Ethernet</string>
+</resources>

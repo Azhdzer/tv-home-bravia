@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="greeting_night">ДОБРОЙ НОЧИ</string>
+    <string name="greeting_morning">ДОБРОЕ УТРО</string>
+    <string name="greeting_afternoon">ДОБРЫЙ ДЕНЬ</string>
+    <string name="greeting_evening">ДОБРЫЙ ВЕЧЕР</string>
+    <string name="inputs">Входы</string>
+    <string name="wifi">Wi-Fi</string>
+    <string name="settings">Настройки</string>
+    <string name="all_apps">ВСЕ ПРИЛОЖЕНИЯ</string>
+    <string name="live_tv">Эфирное ТВ</string>
+    <string name="all_sources">Все источники…</string>
+    <string name="offline">Нет сети</string>
+    <string name="ethernet">Ethernet</string>
+</resources>

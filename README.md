@@ -1,99 +1,79 @@
-# tv-home
+# tv-home-bravia
 
-**Make a slow, ad-filled Android TV fast and clean again.** Debloat it over Wi-Fi and give it a
-tiny Apple TV-style home screen with rotating nature wallpapers. You can hand the whole thing to
-Claude Code with one prompt, or do it by hand with the scripts here.
+**Быстрый и чистый Sony BRAVIA KD-55XF9005.** Отключает по Wi-Fi рекламу, телеметрию и мусор и ставит
+крошечный домашний экран в стиле Apple TV с меняющимися обоями-пейзажами. Всё обратимо: пакеты
+отключаются, но не удаляются.
 
-![Before: Google TV home with a sponsored hero. After: clean dock over a Lake Louise wallpaper](before-after.png)
+Это адаптация проекта [mihirgupta0900/tv-home](https://github.com/mihirgupta0900/tv-home) (он сделан для
+TCL Google TV и macOS) под KD-55XF9005 и Windows.
 
-On a 2 GB TCL Google TV this disabled 25 bloat apps and cut the home screen's memory use from
-192 MB to 83 MB. Everything is reversible: packages are disabled, never uninstalled.
+**Пошаговое руководство: [ИНСТРУКЦИЯ.md](ИНСТРУКЦИЯ.md).** Начинайте с него.
 
-## Do it with Claude Code (easiest)
+**Статус: на настоящем телевизоре проект ещё не запускался.** Проверены сборка APK на Windows 10, логика скриптов на
+программной имитации ТВ и совместимость кода с Android 7–9. Настройки взяты у владельцев телевизоров на той же
+платформе (XBR-65X900F, KD-55XF8096, KD-65A8F). Если вы проверите проект на своём ТВ, расскажите о результате в Issues.
 
-1. On the TV: Settings → System → About → press OK on **Build** 7 times → back → Developer options
-   → turn on **USB debugging**. Keep the TV on, on the same Wi-Fi as your computer.
-2. Clone this repo, open Claude Code inside it (so it can reuse the launcher and scripts), and paste:
+## Коротко
 
-   ```text
-   My Android TV is slow and full of ads. Find it on my Wi-Fi, connect over ADB, and debloat it:
-   disable the manufacturer's ads, telemetry and junk (reversibly, never uninstall), asking me first
-   about apps and features I might use. Then build and install a fast, minimal Apple TV-style home
-   screen with a dock of my favourite apps and rotating nature wallpapers. Back up before changing
-   anything, check every step with screenshots from the TV, and give me a restore script.
+На ТВ включите отладку: *Настройки устройства → Об устройстве →* 7 раз нажмите на *Сборка*, затем
+*Для разработчиков → Отладка по USB*. Затем на компьютере в PowerShell (путь без пробелов и кириллицы):
 
-   Heads-up from people who've done this: use the adb-shell Python package if macOS blocks adb; on
-   Google TV also disable com.google.android.tungsten.setupwraith or it hijacks the Home button; and
-   test the Home button from inside an app.
-   ```
-
-3. Accept "Allow USB debugging?" on the TV when asked, then answer a few questions: which apps you
-   use, which go in the dock, whether you want wallpapers.
-
-The prompt is short on purpose; Claude works out the details. The gotchas below are there in case it gets stuck.
-
-## Do it by hand (macOS)
-
-```bash
-./setup.sh                                                  # Python ADB client, JDK 17, Android SDK
-tools/find-tv.sh                                            # finds the TV, saves its IP
-tools/venv/bin/python -I tools/tv.py --probe                # model, Android version
-tools/disable.sh examples/tcl-google-tv-g07/debloat.txt     # or your own list, see examples/
-launcher/build-and-install.sh                               # build + install the launcher
+```powershell
+git clone https://github.com/Azhdzer/tv-home-bravia.git D:\tv-home-bravia
+cd D:\tv-home-bravia
+.\setup.ps1                                                          # Python-клиент ADB, JDK 17, Android SDK
+tools\find-tv.ps1                                                    # находит ТВ и запоминает его IP
+tools\venv\Scripts\python.exe -I tools\tv.py --probe                 # модель и версия Android
+tools\disable.ps1 examples\sony-bravia-kd55xf9005\debloat.txt        # отключает мусор (сначала делает копию)
+launcher\build-and-install.ps1                                       # собирает и ставит лаунчер
 ```
 
-Undo everything with `tools/restore.sh <the same list>`.
+Откат всего: `tools\restore.ps1 examples\sony-bravia-kd55xf9005\debloat.txt`.
 
-## What's here
+## Чем отличается от оригинала
 
-| Path | What it is |
+| Что | В оригинале | Здесь | Зачем |
+|---|---|---|---|
+| Версия Android | `minSdk 30` (Android 11) | `minSdk 24`, сборка под API 28 | На XF90 Android 9. Оригинальный APK на него просто не установится |
+| Компьютер | macOS (Homebrew, `nc`, `dns-sd`) | Windows 10/11 (PowerShell) | Скрипты переписаны, JDK и SDK ставятся в папку проекта |
+| Домашний экран | Google TV (`launcherx`) | Android TV (`com.google.android.tvlauncher`) | Другой лаунчер и другой порядок передачи кнопки Home |
+| Мастер настройки | Отключается всегда | Не трогается | На этой платформе он не перехватывает Home, а на BRAVIA 9 II его отключение стирало Wi-Fi |
+| Входы и ТВ | `com.tcl.tv` | `com.sony.dtv.tvx` | У Sony это приложение показывает и HDMI, и эфир |
+| Подключение кабелем | Показывает «Offline» | Показывает «Ethernet» | XF90 часто подключён по кабелю |
+| Интерфейс | Английский | Русский при русском языке ТВ, иначе английский | Дата и так была на языке системы |
+| Защита | Нет | Копия перед изменениями, отказ отключать критичные пакеты, откат при неудачной передаче Home | Если ТВ останется без домашнего экрана, спасти его можно только по ADB |
+
+## Что здесь
+
+| Путь | Что это |
 |---|---|
-| [PROMPT.md](PROMPT.md) | The prompt for Claude Code / any coding agent |
-| [launcher/](launcher/) | The home screen. 4.7 MB including the wallpapers; plain Android, no network, no background services |
-| [launcher/res/values/config.xml](launcher/res/values/config.xml) | Dock apps, hidden apps, Live TV app, grid columns |
-| [tools/tv.py](tools/tv.py) | Pure-Python ADB client: shell, batch, screenshots, chunked APK push |
-| [tools/find-tv.sh](tools/find-tv.sh) | Finds Android TVs on your Wi-Fi |
-| [tools/type.sh](tools/type.sh) | Type into the TV's on-screen keyboard from your laptop (`tools/type.sh` alone prompts hidden, for passwords) |
-| [tools/disable.sh](tools/disable.sh), [tools/restore.sh](tools/restore.sh) | Apply / undo a debloat list |
-| [examples/](examples/) | Debloat lists per TV model |
+| [ИНСТРУКЦИЯ.md](ИНСТРУКЦИЯ.md) | Полная пошаговая инструкция с проверками и решением проблем |
+| [PROMPT.md](PROMPT.md) | Готовый запрос, если хотите поручить всё Claude Code |
+| [setup.ps1](setup.ps1) | Разовая настройка компьютера |
+| [examples/sony-bravia-kd55xf9005/debloat.txt](examples/sony-bravia-kd55xf9005/debloat.txt) | Что отключается. Прочитайте: часть функций оставлена на ваш выбор |
+| [launcher/](launcher/) | Домашний экран: 4,7 МБ с обоями, чистый Android, без сети и фоновых служб |
+| [launcher/res/values/config.xml](launcher/res/values/config.xml) | Приложения в доке, скрытые приложения, приложение ТВ, число колонок |
+| [launcher/build-and-install.ps1](launcher/build-and-install.ps1) | Сборка и установка лаунчера |
+| [tools/tv.py](tools/tv.py) | ADB-клиент на чистом Python: команды, скриншоты, загрузка APK |
+| [tools/find-tv.ps1](tools/find-tv.ps1) | Поиск ТВ в сети |
+| [tools/backup.ps1](tools/backup.ps1) | Снимок состояния ТВ |
+| [tools/disable.ps1](tools/disable.ps1), [tools/restore.ps1](tools/restore.ps1) | Применить и отменить список |
+| [tools/type.ps1](tools/type.ps1) | Набор текста на экранной клавиатуре ТВ с компьютера (только латиница) |
 
-## The launcher
+Файлы `*.sh`, `before-after.png` и `examples/tcl-google-tv-g07` остались от оригинала (macOS и TCL). Этот
+проект их не использует, их можно удалить.
 
-- Clock, greeting and date top-left. Frosted pills top-right for **Inputs** (HDMI/AV/Live TV
-  dropdown; the remote's Menu key opens it too), **Wi-Fi** (shows the network name) and **Settings**.
-- A dock of your favourite apps. The focused app's name appears above it over a glow coloured from
-  its banner. Press Down for every other app in a grid.
-- 12 nature photos crossfade every 10 minutes, with a scrim so text stays readable. Swap them in
-  `launcher/assets/wallpapers/` (1920×1080 JPEGs, credits in `launcher/WALLPAPER-CREDITS.md`).
-- Deterministic D-pad focus, remembers the last tile, picks up newly installed apps on return.
+## Лаунчер
 
-Change the dock: edit `config.xml`, then run `launcher/build-and-install.sh`.
+- Часы, приветствие и дата слева вверху. Справа кнопки **Входы** (HDMI, видео, эфирное ТВ), **Wi-Fi** и **Настройки**.
+- Док с любимыми приложениями. Над ним название приложения в фокусе и свечение цвета его баннера. Кнопка «вниз» открывает сетку остальных приложений.
+- 12 фотографий природы сменяются каждые 10 минут. Заменить их можно в `launcher/assets/wallpapers/` (JPEG 1920×1080, авторы указаны в `launcher/WALLPAPER-CREDITS.md`).
+- Предсказуемая навигация пультом, запоминает последнюю плитку, сам замечает новые приложения.
 
-## Gotchas we hit
+## Благодарности
 
-- **macOS blocks the `adb` binary** on the local network ("No route to host"). `tools/tv.py` uses
-  the `adb-shell` Python package instead.
-- **Google TV hijacks the Home button.** With the stock launcher disabled, the setup app
-  (`com.google.android.tungsten.setupwraith`) has a higher HOME priority than any third-party
-  launcher. The install script disables it; `restore.sh` re-enables it.
-- **Home opened the launcher behind the current app**, because of a stale home task from switching
-  launchers. Force-stopping the launcher and `com.android.tv.settings` and pressing Home fixes it.
-  The install script does this.
-- **Chained `pm` commands** (`pm disable a; pm disable b`) can silently stop after the first. The
-  scripts run one per shell call.
-- **Apps installed from the Play Store didn't appear**, because the package broadcast was missed
-  while another app was in front. The launcher re-checks with `getChangedPackages` on every return.
-- **Unsplash blocks scripted downloads** with a bot check. The wallpapers come from Wikimedia
-  Commons Featured Pictures instead.
-
-## Supported TVs
-
-Android TV and Google TV: TCL, Xiaomi/Redmi, Hisense, Sony, OnePlus, Realme, Nvidia Shield,
-Chromecast with Google TV and most others. Not Samsung (Tizen), LG (webOS) or Fire TV.
-Tested on: TCL Google TV (Android 11). Add yours to `examples/`.
-
-## Credits
-
-Inspired by [Gathin23/tv-vibehack](https://github.com/Gathin23/tv-vibehack). Wallpaper photos are
-from Wikimedia Commons under their own licences, see
-[launcher/WALLPAPER-CREDITS.md](launcher/WALLPAPER-CREDITS.md). Code is MIT, see [LICENSE](LICENSE).
+В основе лежит [mihirgupta0900/tv-home](https://github.com/mihirgupta0900/tv-home). Сведения о пакетах Sony и ловушках
+платформы взяты из наблюдений владельцев в [Gathin23/cleanyourtv](https://github.com/Gathin23/cleanyourtv)
+(XBR-65X900F, KD-55XF8096, KD-65A8F) и [mundodigitalpro/sony-bravia-kd55xf8096](https://github.com/mundodigitalpro/sony-bravia-kd55xf8096).
+Код распространяется по лицензии MIT, см. [LICENSE](LICENSE). У фотографий обоев свои лицензии, см.
+[launcher/WALLPAPER-CREDITS.md](launcher/WALLPAPER-CREDITS.md).

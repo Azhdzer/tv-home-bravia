@@ -22,7 +22,10 @@ import android.graphics.drawable.GradientDrawable;
 import android.media.tv.TvContract;
 import android.media.tv.TvInputInfo;
 import android.media.tv.TvInputManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -140,6 +143,7 @@ public class MainActivity extends Activity {
         tf.addAction(Intent.ACTION_TIME_CHANGED);
         tf.addAction(Intent.ACTION_TIMEZONE_CHANGED);
         tf.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+        tf.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(tick, tf);
         updateClock();
         updateWifi();
@@ -147,7 +151,8 @@ public class MainActivity extends Activity {
         if (last == null && !dockCards.isEmpty()) last = dockCards.get(0);
         if (last != null) last.requestFocus();
         // Catch installs/removals that happened while another app was in front.
-        if (getPackageManager().getChangedPackages(packageSeq) != null) buildApps();
+        // Android 7 doesn't have getChangedPackages; there the broadcast receiver is all we get.
+        if (Build.VERSION.SDK_INT >= 26 && getPackageManager().getChangedPackages(packageSeq) != null) buildApps();
         if (firstShow) { firstShow = false; playEntrance(); }
         // New photo on return if the current one has been up for the full interval.
         if (wallIndex < 0 || SystemClock.elapsedRealtime() - wallChangedAt >= WALLPAPER_INTERVAL_MS) nextWallpaper();
@@ -257,7 +262,7 @@ public class MainActivity extends Activity {
         bottom.addView(dockRow, new LinearLayout.LayoutParams(-1, -2));
 
         appsLabel = text(11, "sans-serif-medium", 0x99FFFFFF);
-        appsLabel.setText("ALL APPS");
+        appsLabel.setText(R.string.all_apps);
         appsLabel.setLetterSpacing(0.22f);
         content.addView(appsLabel, llp(-2, -2, dp(68), dp(8), 0, dp(18)));
 
@@ -301,11 +306,11 @@ public class MainActivity extends Activity {
         LinearLayout right = new LinearLayout(this);
         right.setGravity(Gravity.CENTER_VERTICAL);
         right.setClipChildren(false);
-        TextView inputs = pill("Inputs", "⇥");
+        TextView inputs = pill(getString(R.string.inputs), "⇥");
         inputs.setOnClickListener(v -> showInputs(v));
-        wifiPill = pill("Wi-Fi", "◉");
+        wifiPill = pill(getString(R.string.wifi), "◉");
         wifiPill.setOnClickListener(v -> launch(new Intent(Settings.ACTION_WIFI_SETTINGS)));
-        TextView settings = pill("Settings", "⚙");
+        TextView settings = pill(getString(R.string.settings), "⚙");
         settings.setOnClickListener(v -> launch(new Intent(Settings.ACTION_SETTINGS)));
         for (TextView p : new TextView[]{inputs, wifiPill, settings}) {
             right.addView(p, llp(-2, dp(30), dp(10), 0, 0, 0));
@@ -341,8 +346,10 @@ public class MainActivity extends Activity {
 
     private void buildApps() {
         PackageManager pm = getPackageManager();
-        android.content.pm.ChangedPackages changed = pm.getChangedPackages(packageSeq);
-        if (changed != null) packageSeq = changed.getSequenceNumber();
+        if (Build.VERSION.SDK_INT >= 26) {
+            android.content.pm.ChangedPackages changed = pm.getChangedPackages(packageSeq);
+            if (changed != null) packageSeq = changed.getSequenceNumber();
+        }
         Intent q = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER);
         Map<String, App> byPkg = new HashMap<>();
         for (ResolveInfo ri : pm.queryIntentActivities(q, 0)) {
@@ -558,13 +565,15 @@ public class MainActivity extends Activity {
             rows.add(inputRow(inputLabel(t), () -> {
                 Intent i = new Intent(Intent.ACTION_VIEW, TvContract.buildChannelUriForPassthroughInput(t.getId()));
                 i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                // The TV app plays every HDMI input on Sony; name it so nothing else can claim the intent.
+                if (isInstalled(liveTvPkg) && launch(new Intent(i).setPackage(liveTvPkg))) return;
                 if (!launch(i)) openPackage(inputPickerPkg);
             }));
         }
-        if (isInstalled(liveTvPkg)) rows.add(inputRow("Live TV", () -> openPackage(liveTvPkg)));
-        if (inputs.isEmpty() && isInstalled(inputPickerPkg)) rows.add(inputRow("All sources…", () -> openPackage(inputPickerPkg)));
+        if (isInstalled(liveTvPkg)) rows.add(inputRow(getString(R.string.live_tv), () -> openPackage(liveTvPkg)));
+        if (inputs.isEmpty() && isInstalled(inputPickerPkg)) rows.add(inputRow(getString(R.string.all_sources), () -> openPackage(inputPickerPkg)));
 
-        if (rows.isEmpty()) rows.add(inputRow("Settings", () -> launch(new Intent(Settings.ACTION_SETTINGS))));
+        if (rows.isEmpty()) rows.add(inputRow(getString(R.string.settings), () -> launch(new Intent(Settings.ACTION_SETTINGS))));
         for (TextView r : rows) {
             r.setOnClickListener(v -> { pw.dismiss(); ((Runnable) v.getTag()).run(); });
             list.addView(r, new LinearLayout.LayoutParams(-1, dp(36)));
@@ -614,7 +623,8 @@ public class MainActivity extends Activity {
     private void updateClock() {
         Calendar now = Calendar.getInstance();
         int h = now.get(Calendar.HOUR_OF_DAY);
-        greeting.setText(h < 5 ? "GOOD NIGHT" : h < 12 ? "GOOD MORNING" : h < 17 ? "GOOD AFTERNOON" : "GOOD EVENING");
+        greeting.setText(h < 5 ? R.string.greeting_night : h < 12 ? R.string.greeting_morning
+                : h < 17 ? R.string.greeting_afternoon : R.string.greeting_evening);
         boolean is24 = android.text.format.DateFormat.is24HourFormat(this);
         clock.setText(new SimpleDateFormat(is24 ? "H:mm" : "h:mm", Locale.getDefault()).format(now.getTime()));
         ampm.setText(is24 ? "" : (h < 12 ? "AM" : "PM"));
@@ -622,13 +632,19 @@ public class MainActivity extends Activity {
     }
 
     private void updateWifi() {
-        String name = "Wi-Fi";
+        String name = getString(R.string.wifi);
         try {
+            // Many of these TVs are on the Ethernet port, where Wi-Fi alone would read as offline.
+            ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+            NetworkInfo net = cm == null ? null : cm.getActiveNetworkInfo();
             WifiManager wm = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
-            if (wm != null && wm.getConnectionInfo() != null) {
+            if (net == null || !net.isConnected()) {
+                name = getString(R.string.offline);
+            } else if (net.getType() == ConnectivityManager.TYPE_ETHERNET) {
+                name = getString(R.string.ethernet);
+            } else if (wm != null && wm.getConnectionInfo() != null) {
                 String s = wm.getConnectionInfo().getSSID();
                 if (s != null && !s.contains("unknown ssid")) name = s.replace("\"", "");
-                if (wm.getConnectionInfo().getNetworkId() == -1) name = "Offline";
             }
         } catch (SecurityException ignored) { }
         wifiPill.setText("◉  " + name);
