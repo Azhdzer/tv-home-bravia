@@ -60,9 +60,6 @@ launcher\build-and-install.ps1                                       # соби�
 | [tools/disable.ps1](tools/disable.ps1), [tools/restore.ps1](tools/restore.ps1) | Применить и отменить список |
 | [tools/type.ps1](tools/type.ps1) | Набор текста на экранной клавиатуре ТВ с компьютера (только латиница) |
 
-Файлы `*.sh`, `before-after.png` и `examples/tcl-google-tv-g07` остались от оригинала (macOS и TCL). Этот
-проект их не использует, их можно удалить.
-
 ## Лаунчер
 
 - Часы, приветствие и дата слева вверху. Справа кнопки **Входы** (HDMI, видео, эфирное ТВ), **Wi-Fi** и **Настройки**.
